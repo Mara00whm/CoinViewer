@@ -1,0 +1,60 @@
+{
+  "originHash" : "b89064290b74eca4252113d81b181d732b7fc671bb2e4811a681a6efbb728b2c",
+  "pins" : [
+    {
+      "identity" : "appcore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Mara00whm/AppCore.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "dbfaceee2c8dc7ba87caafac21e2faa8aa26c9de"
+      }
+    },
+    {
+      "identity" : "appimagecore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Mara00whm/AppImageCore.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "2cf02e5d5abbfc545597b411e464e3dec27803af"
+      }
+    },
+    {
+      "identity" : "appnetworkcore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Mara00whm/AppNetworkCore.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "c7d4be2e092f643789404f24d146e7fb7c0dd106"
+      }
+    },
+    {
+      "identity" : "appstoragecore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Mara00whm/AppStorageCore.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "96e37d5363756d09f8982b35dcd09fb5e4dbdc33"
+      }
+    },
+    {
+      "identity" : "appuicore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Mara00whm/AppUICore.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "83eeb10255ecf74e6036b10b250bc79acd85cfe7"
+      }
+    },
+    {
+      "identity" : "snapkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SnapKit/SnapKit.git",
+      "state" : {
+        "revision" : "2842e6e84e82eb9a8dac0100ca90d9444b0307f4",
+        "version" : "5.7.1"
+      }
+    }
+  ],
+  "version" : 3
+}

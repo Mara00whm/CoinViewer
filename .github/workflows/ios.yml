@@ -1,0 +1,38 @@
+name: iOS CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve Swift packages
+        run: xcodebuild -resolvePackageDependencies -project IMW.xcodeproj -scheme IMW
+
+      - name: Build
+        run: xcodebuild -project IMW.xcodeproj -scheme IMW -destination 'generic/platform=iOS Simulator' build
+
+      - name: Select test simulator
+        id: simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { print $2; exit }')
+          if [ -z "$DEVICE_ID" ]; then
+            exit 1
+          fi
+          echo "device_id=$DEVICE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: xcodebuild -project IMW.xcodeproj -scheme IMW -destination 'platform=iOS Simulator,id=${{ steps.simulator.outputs.device_id }}' test
