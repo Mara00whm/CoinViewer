@@ -16,7 +16,7 @@ enum AppBootstrapper {
     // MARK: - Public methods
 
     static func makeDependencyContainer(marketDataAPIKey: String? = nil) async throws -> DependencyContainer {
-        let restClient: RESTClient = makeRESTClient(marketDataAPIKey: marketDataAPIKey)
+        let restClient: RESTClient = try makeRESTClient(marketDataAPIKey: marketDataAPIKey)
         let imageFileStorage: LocalFileStorage = try .init(configuration: .init(directory: .caches, folderName: "IMWImages"))
         let imageDataClient: RESTImageDataClient = .init { components in
             .init(baseURL: components)
@@ -37,8 +37,12 @@ enum AppBootstrapper {
 
 private extension AppBootstrapper {
 
-    static func makeRESTClient(marketDataAPIKey: String?) -> RESTClient {
-        let baseURL: URLComponents = .init(string: "https://api.coingecko.com/api/v3")!
+    static func makeRESTClient(marketDataAPIKey: String?) throws -> RESTClient {
+        let baseURLString: String = "https://api.coingecko.com/api/v3"
+        guard let baseURL: URLComponents = .init(string: baseURLString) else {
+            throw AppBootstrapperError.invalidBaseURL(baseURLString)
+        }
+
         var defaultHeaders: [String: String] = [
             "Accept": "application/json"
         ]
@@ -63,5 +67,18 @@ private extension AppBootstrapper {
         try FileManager.default
             .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent("IMWStorage.sqlite")
+    }
+}
+
+private enum AppBootstrapperError: LocalizedError {
+    case invalidBaseURL(String)
+
+    // MARK: - Computed properties
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidBaseURL(let value):
+            return "Invalid base URL: \(value)"
+        }
     }
 }

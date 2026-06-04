@@ -18,6 +18,7 @@ protocol WatchListPresentationProtocol: AnyObject {
     func refreshData()
     func selectAsset(at index: Int)
     func retryDataLoading()
+    func cancelTasks()
 }
 
 @MainActor
@@ -79,6 +80,11 @@ final class WatchListPresenter: WatchListPresentationProtocol {
     func retryDataLoading() {
         refreshData()
     }
+
+    func cancelTasks() {
+        taskBox.cancelAll()
+        isLoading = false
+    }
 }
 
 // MARK: - Private Methods
@@ -94,6 +100,7 @@ private extension WatchListPresenter {
             do {
                 let cachedAssets: [MarketListDomain] = try await worker.fetchCachedWatchlist()
                 let images: [String: UIImage] = await loadImages(for: cachedAssets)
+                guard Task.isCancelled == false else { return }
 
                 assets = cachedAssets
                 assetImages = images
@@ -124,6 +131,9 @@ private extension WatchListPresenter {
 
                 do {
                     cachedAssets = try await worker.fetchCachedWatchlist()
+                } catch is CancellationError {
+                    isLoading = false
+                    return
                 } catch {
                     AppLogger.dump(error, name: "Watchlist cached refresh fetch error")
                     isLoading = false
@@ -144,6 +154,10 @@ private extension WatchListPresenter {
                 let response: [APINamespaces.MarketList.Response] = try await worker.fetchWatchlist(ids: ids)
                 let domains: [MarketListDomain] = sortedDomains(mapper.mapToDomain(response), ids: ids)
                 let images: [String: UIImage] = await loadImages(for: domains)
+                guard Task.isCancelled == false else {
+                    isLoading = false
+                    return
+                }
 
                 assets = domains
                 assetImages = images
@@ -167,20 +181,32 @@ private extension WatchListPresenter {
     }
 
     func loadImages(for domains: [MarketListDomain]) async -> [String: UIImage] {
-        var images: [String: UIImage] = [:]
+        await withTaskGroup(of: (String, UIImage)?.self) { [worker] group in
+            domains.forEach { domain in
+                guard let imageURL: URL = domain.imageURL else { return }
 
-        for domain in domains {
-            guard let imageURL: URL = domain.imageURL else { continue }
-
-            do {
-                let image: UIImage = try await worker.fetchImage(for: imageURL)
-                images[domain.id] = image
-            } catch {
-                continue
+                group.addTask {
+                    do {
+                        let image: UIImage = try await worker.fetchImage(for: imageURL)
+                        return (domain.id, image)
+                    } catch is CancellationError {
+                        return nil
+                    } catch {
+                        AppLogger.dump(error, name: "Watchlist image fetch error")
+                        return nil
+                    }
+                }
             }
-        }
 
-        return images
+            var images: [String: UIImage] = [:]
+
+            for await result in group {
+                guard let result else { continue }
+                images[result.0] = result.1
+            }
+
+            return images
+        }
     }
 
     func sortedDomains(_ domains: [MarketListDomain], ids: [String]) -> [MarketListDomain] {

@@ -18,6 +18,7 @@ protocol MarketListPresentationProtocol: AnyObject {
     func loadNextData()
     func selectAsset(at index: Int)
     func retryDataLoading()
+    func cancelTasks()
 }
 
 @MainActor
@@ -85,6 +86,11 @@ final class MarketListPresenter: MarketListPresentationProtocol {
     func retryDataLoading() {
         refreshData()
     }
+
+    func cancelTasks() {
+        taskBox.cancelAll()
+        isLoading = false
+    }
 }
 
 // MARK: - Private Methods
@@ -102,10 +108,13 @@ private extension MarketListPresenter {
                 guard assets.isEmpty, cachedAssets.isEmpty == false else { return }
 
                 let images: [String: UIImage] = await loadImages(for: cachedAssets)
+                guard Task.isCancelled == false else { return }
 
                 assetImages.merge(images) { _, new in new }
                 assets = cachedAssets
                 displayCurrentAssets()
+            } catch is CancellationError {
+                return
             } catch {
                 AppLogger.dump(error, name: "Market list cached fetch error")
             }
@@ -142,6 +151,10 @@ private extension MarketListPresenter {
                 let response: [APINamespaces.MarketList.Response] = try await worker.fetchMarketList(page: page, perPage: request.limit)
                 let domains: [MarketListDomain] = mapper.mapToDomain(response)
                 let images: [String: UIImage] = await loadImages(for: domains)
+                guard Task.isCancelled == false else {
+                    isLoading = false
+                    return
+                }
 
                 assetImages.merge(images) { _, new in new }
                 paginator.handleLoadedItemsCount(domains.count)
@@ -154,6 +167,8 @@ private extension MarketListPresenter {
                 } catch {
                     AppLogger.dump(error, name: "Market list cache save error")
                 }
+            } catch is CancellationError {
+                isLoading = false
             } catch {
                 isLoading = false
                 viewController?.displayError(error.localizedDescription)
@@ -164,20 +179,32 @@ private extension MarketListPresenter {
     }
 
     func loadImages(for domains: [MarketListDomain]) async -> [String: UIImage] {
-        var images: [String: UIImage] = [:]
+        await withTaskGroup(of: (String, UIImage)?.self) { [worker] group in
+            domains.forEach { domain in
+                guard let imageURL: URL = domain.imageURL else { return }
 
-        for domain in domains {
-            guard let imageURL: URL = domain.imageURL else { continue }
-
-            do {
-                let image: UIImage = try await worker.fetchImage(for: imageURL)
-                images[domain.id] = image
-            } catch {
-                continue
+                group.addTask {
+                    do {
+                        let image: UIImage = try await worker.fetchImage(for: imageURL)
+                        return (domain.id, image)
+                    } catch is CancellationError {
+                        return nil
+                    } catch {
+                        AppLogger.dump(error, name: "Market list image fetch error")
+                        return nil
+                    }
+                }
             }
-        }
 
-        return images
+            var images: [String: UIImage] = [:]
+
+            for await result in group {
+                guard let result else { continue }
+                images[result.0] = result.1
+            }
+
+            return images
+        }
     }
 
     func displayCurrentAssets() {

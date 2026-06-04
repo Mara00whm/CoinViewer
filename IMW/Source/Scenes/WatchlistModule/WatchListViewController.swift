@@ -59,6 +59,13 @@ final class WatchListViewController: BaseViewController {
         presenter.viewWillAppear()
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        guard shouldCancelTasksOnDisappear else { return }
+        presenter?.cancelTasks()
+    }
+
     // MARK: - Public Methods
 
     override func showLoading() {

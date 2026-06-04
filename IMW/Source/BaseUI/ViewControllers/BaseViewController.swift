@@ -53,6 +53,10 @@ class BaseViewController: UIViewController, BaseViewControllerInterface {
     func showAlert(title: String?, message: String?, actionTitle: String = "OK", retryActionTitle: String = "Повторить", retryHandler: (() -> Void)? = nil) {
         alertPresenter.showAlert(title: title, message: message, actionTitle: actionTitle, retryActionTitle: retryActionTitle, on: self, retryHandler: retryHandler)
     }
+
+    var shouldCancelTasksOnDisappear: Bool {
+        isMovingFromParent || isBeingDismissed || navigationController?.isBeingDismissed == true || tabBarController?.isBeingDismissed == true || navigationController?.topViewController !== self
+    }
 }
 
 // MARK: - Private methods

@@ -18,6 +18,7 @@ protocol MarketDetailPresentationProtocol: AnyObject {
     func selectLink(at index: Int)
     func toggleWatchlist()
     func retryDataLoading()
+    func cancelTasks()
 }
 
 @MainActor
@@ -99,9 +100,11 @@ final class MarketDetailPresenter: MarketDetailPresentationProtocol {
             do {
                 if isInWatchlist {
                     try await worker.deleteWatchlistAsset(id: detail.id)
+                    guard Task.isCancelled == false else { return }
                     isInWatchlist = false
                 } else {
                     try await worker.saveWatchlistAsset(mapper.mapToMarketListDomain(detail))
+                    guard Task.isCancelled == false else { return }
                     isInWatchlist = true
                 }
 
@@ -120,6 +123,12 @@ final class MarketDetailPresenter: MarketDetailPresentationProtocol {
         loadDetail()
         loadChart(range: selectedRange)
     }
+
+    func cancelTasks() {
+        taskBox.cancelAll()
+        isLoadingDetail = false
+        isLoadingChart = false
+    }
 }
 
 // MARK: - Private Methods
@@ -132,6 +141,7 @@ private extension MarketDetailPresenter {
 
             do {
                 isInWatchlist = try await worker.isWatchlistAssetSaved(id: id)
+                guard Task.isCancelled == false else { return }
                 displayCurrentState()
             } catch is CancellationError {
                 return
@@ -150,6 +160,7 @@ private extension MarketDetailPresenter {
             do {
                 guard let cachedDetail: MarketDetailDomain = try await worker.fetchCachedMarketDetail(id: id) else { return }
                 let image: UIImage? = await loadImageIfNeeded(for: cachedDetail)
+                guard Task.isCancelled == false else { return }
 
                 detail = cachedDetail
                 detailImage = image
@@ -176,6 +187,10 @@ private extension MarketDetailPresenter {
                 let response: APINamespaces.MarketDetail.Response = try await worker.fetchMarketDetail(id: id)
                 let domain: MarketDetailDomain = mapper.mapToDomain(response)
                 let image: UIImage? = await loadImageIfNeeded(for: domain)
+                guard Task.isCancelled == false else {
+                    isLoadingDetail = false
+                    return
+                }
 
                 detail = domain
                 detailImage = image
@@ -205,6 +220,7 @@ private extension MarketDetailPresenter {
             do {
                 let cachedPoints: [MarketChartPointDomain] = try await worker.fetchCachedMarketChart(id: id, range: range)
                 guard selectedRange == range, cachedPoints.isEmpty == false else { return }
+                guard Task.isCancelled == false else { return }
 
                 chartPoints = cachedPoints
                 displayCurrentState()
@@ -229,6 +245,12 @@ private extension MarketDetailPresenter {
             do {
                 let response: APINamespaces.MarketChart.Response = try await worker.fetchMarketChart(id: id, range: range)
                 let points: [MarketChartPointDomain] = mapper.mapToChartPoints(response)
+                guard Task.isCancelled == false else {
+                    if selectedRange == range {
+                        isLoadingChart = false
+                    }
+                    return
+                }
 
                 guard selectedRange == range else {
                     isLoadingChart = false
@@ -262,7 +284,10 @@ private extension MarketDetailPresenter {
 
         do {
             return try await worker.fetchImage(for: imageURL)
+        } catch is CancellationError {
+            return nil
         } catch {
+            AppLogger.dump(error, name: "Market detail image fetch error")
             return nil
         }
     }
