@@ -376,12 +376,12 @@ private final class MarketListFetchGate {
     }
 
     func resume(returning response: [APINamespaces.MarketList.Response]) {
-        guard let continuation else {
+        guard let currentContinuation = continuation else {
             XCTFail("MarketListFetchGate has no pending request")
             return
         }
 
-        continuation.resume(returning: response)
+        currentContinuation.resume(returning: response)
         continuation = nil
     }
 }
