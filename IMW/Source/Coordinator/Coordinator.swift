@@ -14,11 +14,6 @@ protocol Coordinator: AnyObject {
     func start() -> UIViewController
 }
 
-@MainActor
-protocol DependencyCoordinatorInterface: Coordinator {
-    init(dependencyContainer: any DependencyContainerInterface)
-}
-
 extension Coordinator {
 
     // MARK: - Computed properties

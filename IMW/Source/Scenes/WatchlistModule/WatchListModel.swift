@@ -16,7 +16,9 @@ enum WatchListModel {
         let isEmpty: Bool
     }
 
-    struct InjectionModel {
+    struct Input { }
+
+    struct Dependencies {
         let restClient: any RESTClientInterface
         let imageLoader: any ImageLoaderInterface
         let storageClient: any StorageClient

@@ -59,8 +59,8 @@ final class MarketDetailPresenter: MarketDetailPresentationProtocol {
 
     // MARK: - Init
 
-    init(_ injection: MarketDetailModel.InjectionModel, worker: MarketDetailWorkerInterface, mapper: MarketDetailMapperInterface) {
-        self.id = injection.id
+    init(input: MarketDetailModel.Input, worker: MarketDetailWorkerInterface, mapper: MarketDetailMapperInterface) {
+        self.id = input.id
         self.worker = worker
         self.mapper = mapper
     }

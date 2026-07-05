@@ -29,7 +29,7 @@ enum MarketChartStorageMapper {
 
 private extension MarketChartStorageMapper {
 
-    static func mapToDomain(_ entity: MarketChartPointEntity) -> MarketChartPointDomain? {
+    nonisolated static func mapToDomain(_ entity: MarketChartPointEntity) -> MarketChartPointDomain? {
         guard let date: Date = entity.date,
               let price: NSNumber = entity.price else { return nil }
 

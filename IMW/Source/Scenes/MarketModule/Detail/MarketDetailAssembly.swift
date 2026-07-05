@@ -5,19 +5,28 @@
 //  Created by Марат Саляхетдинов on 03.06.2026.
 //
 
-@MainActor
-enum MarketDetailAssembly {
+import UIKit
 
-    static func makeViewController(_ injection: MarketDetailModel.InjectionModel) -> MarketDetailViewController {
+@MainActor
+final class MarketDetailAssembly {
+
+    // MARK: - Public methods
+
+    func createModule(input: MarketDetailModel.Input, dependencies: MarketDetailModel.Dependencies) -> UIViewController {
         let viewController: MarketDetailViewController = .init()
-        configurate(viewController, injection)
+        configurate(viewController, input: input, dependencies: dependencies)
         return viewController
     }
+}
 
-    private static func configurate(_ vc: MarketDetailDisplayLogic, _ injection: MarketDetailModel.InjectionModel) {
-        let worker: MarketDetailWorkerInterface = MarketDetailWorker(restClient: injection.restClient, imageLoader: injection.imageLoader, storageClient: injection.storageClient)
+// MARK: - Private methods
+
+private extension MarketDetailAssembly {
+
+    func configurate(_ vc: MarketDetailDisplayLogic, input: MarketDetailModel.Input, dependencies: MarketDetailModel.Dependencies) {
+        let worker: MarketDetailWorkerInterface = MarketDetailWorker(restClient: dependencies.restClient, imageLoader: dependencies.imageLoader, storageClient: dependencies.storageClient)
         let mapper: MarketDetailMapperInterface = MarketDetailMapper()
-        let presenter: MarketDetailPresenter = .init(injection, worker: worker, mapper: mapper)
+        let presenter: MarketDetailPresenter = .init(input: input, worker: worker, mapper: mapper)
         vc.presenter = presenter
         presenter.viewController = vc
     }

@@ -52,10 +52,37 @@ IMW - iOS-приложение для просмотра криптовалют�
 - `Presenter` отвечает за состояние экрана, загрузку данных, пагинацию, retry, cancellation и подготовку данных к отображению.
 - `Worker` работает с внешними зависимостями: сетью, storage и image loader.
 - `Mapper` преобразует API/storage domain-модели во view models.
-- `Coordinator` отвечает за навигацию и сборку флоу.
+- `Coordinator` отвечает за навигацию внутри flow.
+- `Container` отвечает за создание экранов и скрывает composition logic от координатора.
 - `Assembly` создает конкретный модуль и связывает `ViewController`, `Presenter`, `Worker`, `Mapper`.
 
 Цель такого разбиения - оставить экранные классы читаемыми и не смешивать UI, навигацию, сетевые запросы, CoreData и форматирование данных в одном месте.
+
+## Module Containers
+
+Сборка экранов вынесена из координаторов в отдельные container-объекты.
+
+В проекте есть несколько уровней composition:
+
+- `MainCoordinator` создает flow-контейнеры и общий container.
+- `MarketContainer` собирает экраны market flow.
+- `WatchlistContainer` собирает экраны watchlist flow.
+- `CommonModuleContainer` собирает общие экраны, которые используются из разных flow.
+
+Например, detail screen доступен из `Market` и `Watchlist`, но сам модуль собирается в одном месте - `CommonModuleContainer`.
+
+Это убирает дублирование сборки экранов и оставляет координаторы ответственными только за навигацию:
+
+- `MarketCoordinator` не знает, как устроен `MarketDetailAssembly`;
+- `WatchlistCoordinator` не дублирует зависимости detail-экрана;
+- общие экраны можно переиспользовать между flow без копирования composition-кода.
+
+Внутри модулей входные данные и зависимости разделены:
+
+- `Input` - данные, необходимые конкретному экрану, например asset id;
+- `Dependencies` - сервисы и внешние зависимости, например `RESTClientInterface`, `StorageClient`, `ImageLoaderInterface`, routing/coordinator.
+
+Такое разделение делает границы модуля явными: presenter получает только данные своего сценария, а сборка зависимостей остается в assembly/container layer.
 
 ## Core-пакеты
 
@@ -89,6 +116,9 @@ IMW
 │   ├── APIEndpoints
 │   ├── BaseUI
 │   ├── Coordinator
+│   │   ├── CommonModuleContainer
+│   │   ├── MarketContainer
+│   │   └── WatchlistContainer
 │   ├── Scenes
 │   │   ├── MarketModule
 │   │   │   ├── List
@@ -239,9 +269,11 @@ SwiftUI используется точечно - для графика чере
 - `FileStorage`
 - `StorageClient`
 
-Модули получают зависимости через injection models и собираются в assemblies.
+Модули получают зависимости через `Dependencies` models и собираются в assemblies.
 
-Такой подход оставляет зависимости явными и не превращает проект в набор singleton'ов.
+Сборка экранов проходит через module containers, а внутри каждого модуля данные экрана и внешние зависимости разделены на `Input` и `Dependencies`.
+
+Такой подход оставляет зависимости явными, не превращает проект в набор singleton'ов и не заставляет координаторы знать детали создания presenter/worker/mapper.
 
 ## Тесты
 

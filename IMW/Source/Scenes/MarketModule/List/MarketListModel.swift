@@ -28,7 +28,9 @@ enum MarketListModel {
         let image: UIImage?
     }
 
-    struct InjectionModel {
+    struct Input { }
+
+    struct Dependencies {
         let restClient: any RESTClientInterface
         let imageLoader: any ImageLoaderInterface
         let storageClient: any StorageClient

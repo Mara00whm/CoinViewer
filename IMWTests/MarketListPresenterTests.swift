@@ -335,10 +335,6 @@ private final class MarketCoordinatorMock: MarketCoordinatorInterface {
 
     init() {}
 
-    required init(dependencyContainer: any DependencyContainerInterface) {
-        fatalError("init(dependencyContainer:) has not been implemented")
-    }
-
     // MARK: - Public methods
 
     func start() -> UIViewController {

@@ -24,10 +24,12 @@ final class MainCoordinator: Coordinator {
     // MARK: - Init
 
     init(dependencyContainer: any DependencyContainerInterface) {
+        let commonContainer: any CommonModuleContainerInterface = CommonModuleContainer(dependencies: dependencyContainer)
+
         self.tabBarController = .init()
         self.rootViewController = tabBarController
-        self.marketCoordinator = .init(dependencyContainer: dependencyContainer)
-        self.watchlistCoordinator = .init(dependencyContainer: dependencyContainer)
+        self.marketCoordinator = .init(container: MarketContainer(dependencies: dependencyContainer), commonContainer: commonContainer)
+        self.watchlistCoordinator = .init(container: WatchlistContainer(dependencies: dependencyContainer), commonContainer: commonContainer)
     }
 
     // MARK: - Public methods

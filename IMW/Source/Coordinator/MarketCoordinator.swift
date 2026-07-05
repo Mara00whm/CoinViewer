@@ -8,7 +8,7 @@
 import UIKit
 
 @MainActor
-protocol MarketCoordinatorInterface: DependencyCoordinatorInterface {
+protocol MarketCoordinatorInterface: Coordinator {
     func showDetail(id: String)
 }
 
@@ -21,25 +21,27 @@ final class MarketCoordinator: MarketCoordinatorInterface {
 
     // MARK: - Private properties
 
-    private let dependencyContainer: any DependencyContainerInterface
+    private let container: any MarketContainerInterface
+    private let commonContainer: any CommonModuleContainerInterface
 
     // MARK: - Init
 
-    init(dependencyContainer: any DependencyContainerInterface) {
-        self.dependencyContainer = dependencyContainer
+    init(container: any MarketContainerInterface, commonContainer: any CommonModuleContainerInterface) {
+        self.container = container
+        self.commonContainer = commonContainer
         self.rootViewController = UINavigationController()
     }
 
     // MARK: - Public methods
 
     func start() -> UIViewController {
-        let viewController: MarketListViewController = MarketListAssembly.makeViewController(.init(restClient: dependencyContainer.restClient, imageLoader: dependencyContainer.imageLoader, storageClient: dependencyContainer.storageClient, coordinator: self))
+        let viewController: UIViewController = container.createMarketListScreen(coordinator: self)
         navigationRootViewController?.setViewControllers([viewController], animated: false)
         return rootViewController
     }
 
     func showDetail(id: String) {
-        let viewController: MarketDetailViewController = MarketDetailAssembly.makeViewController(.init(id: id, restClient: dependencyContainer.restClient, imageLoader: dependencyContainer.imageLoader, storageClient: dependencyContainer.storageClient))
+        let viewController: UIViewController = commonContainer.createMarketDetailScreen(id: id)
         push(viewController)
     }
 }

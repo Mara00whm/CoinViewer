@@ -52,8 +52,11 @@ enum MarketDetailModel {
         let url: URL
     }
 
-    struct InjectionModel {
+    struct Input {
         let id: String
+    }
+
+    struct Dependencies {
         let restClient: any RESTClientInterface
         let imageLoader: any ImageLoaderInterface
         let storageClient: any StorageClient

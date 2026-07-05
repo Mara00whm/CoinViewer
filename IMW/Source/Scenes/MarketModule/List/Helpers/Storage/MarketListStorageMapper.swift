@@ -36,7 +36,7 @@ enum MarketListStorageMapper {
 
 private extension MarketListStorageMapper {
 
-    static func mapToDomain(_ entity: MarketAssetEntity) -> MarketListDomain? {
+    nonisolated static func mapToDomain(_ entity: MarketAssetEntity) -> MarketListDomain? {
         guard let id: String = entity.id,
               let symbol: String = entity.symbol,
               let name: String = entity.name else { return nil }
